@@ -30,7 +30,7 @@ public class TestOne {
     public static void main(String[] args) {
         SchemaPlus schemaPlus = Frameworks.createRootSchema(true);
 
-        schemaPlus.add("s", new ReflectiveSchema(new TestSchema()));
+        schemaPlus.add("T", new ReflectiveSchema(new TestSchema()));
         Frameworks.ConfigBuilder configBuilder = Frameworks.newConfigBuilder();
         configBuilder.defaultSchema(schemaPlus);
 
@@ -45,8 +45,11 @@ public class TestOne {
         SqlNode sqlNode = null;
         RelRoot relRoot = null;
         try {
-            sqlNode = planner.parse("select * from \"s\".\"rdf\" \"a\", \"s\".\"rdf\" \"b\"" +
-                    "where \"a\".\"s\" = 5 and \"b\".\"s\" = 5 limit 5, 1000");
+//            sqlNode = planner.parse("select * from \"s\".\"rdf\" \"a\", \"s\".\"rdf\" \"b\"" +
+//                    "where \"a\".\"s\" = 5 and \"b\".\"s\" = 5 limit 5, 1000");
+
+
+            sqlNode = planner.parse("select \"a\".\"s\", count(\"a\".\"s\") from \"T\".\"rdf\" \"a\" group by \"a\".\"s\"");
             planner.validate(sqlNode);
             relRoot = planner.rel(sqlNode);
         } catch (Exception e) {
