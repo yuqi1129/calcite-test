@@ -1,7 +1,5 @@
 package com.netease.yuqi.calcatetest;
 
-import com.sun.org.apache.xerces.internal.xinclude.XPointerFramework;
-
 import org.apache.calcite.adapter.java.ReflectiveSchema;
 import org.apache.calcite.plan.RelOptUtil;
 import org.apache.calcite.rel.RelNode;
