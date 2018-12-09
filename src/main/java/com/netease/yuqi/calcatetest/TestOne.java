@@ -23,6 +23,8 @@ public class TestOne {
 
     public static class TestSchema {
         public final Triple[] rdf = {new Triple("s", "p", "o")};
+
+      //  public final Triple rdf = new Triple("s", "p", "o");
     }
 
     public static void main(String[] args) {
@@ -47,7 +49,8 @@ public class TestOne {
 //                    "where \"a\".\"s\" = 5 and \"b\".\"s\" = 5 limit 5, 1000");
 
 
-            sqlNode = planner.parse("select \"a\".\"s\", count(\"a\".\"s\") from \"T\".\"rdf\" \"a\" group by \"a\".\"s\"");
+            //sqlNode = planner.parse("select \"a\".\"s\", count(\"a\".\"s\") from \"T\".\"rdf\" \"a\" group by \"a\".\"s\"");
+            sqlNode = planner.parse("select distinct cast(\"a\".\"s\" as INT) from \"T\".\"rdf\" \"a\"");
             planner.validate(sqlNode);
             relRoot = planner.rel(sqlNode);
         } catch (Exception e) {
