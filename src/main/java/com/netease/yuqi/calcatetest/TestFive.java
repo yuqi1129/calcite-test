@@ -95,6 +95,36 @@ public class TestFive {
 					return builder.build();
 				}
 			});
+
+
+			rootSchema.add("FINAL_RESULT", new AbstractTable() {
+				public RelDataType getRowType(final RelDataTypeFactory typeFactory) {
+					RelDataTypeFactory.FieldInfoBuilder builder = typeFactory.builder();
+					builder.add("ID", new BasicSqlType(new RelDataTypeSystemImpl() {
+					}, SqlTypeName.INTEGER));
+					builder.add("SOURCE_DS", new BasicSqlType(new RelDataTypeSystemImpl() {
+					}, SqlTypeName.VARCHAR));
+					builder.add("DS", new BasicSqlType(new RelDataTypeSystemImpl() {
+					}, SqlTypeName.VARCHAR));
+					return builder.build();
+				}
+			});
+
+			rootSchema.add("MY_SOURCE", new AbstractTable() {
+				public RelDataType getRowType(final RelDataTypeFactory typeFactory) {
+					RelDataTypeFactory.FieldInfoBuilder builder = typeFactory.builder();
+					builder.add("ID", new BasicSqlType(new RelDataTypeSystemImpl() {
+					}, SqlTypeName.INTEGER));
+					builder.add("SOURCE_DS", new BasicSqlType(new RelDataTypeSystemImpl() {
+					}, SqlTypeName.VARCHAR));
+					builder.add("DS", new BasicSqlType(new RelDataTypeSystemImpl() {
+					}, SqlTypeName.VARCHAR));
+					return builder.build();
+				}
+			});
+
+
+
 			final FrameworkConfig config = Frameworks.newConfigBuilder()
 					.parserConfig(SqlParser.Config.DEFAULT)
 					.defaultSchema(rootSchema)
@@ -102,9 +132,10 @@ public class TestFive {
 					.build();
 			//String sql = "insert into table_result select id+1, name, score from (select a.id + 1 as id, a.name as name, b.score from users a left join score b on a.id = b.id where a.time_d between '2008-09-12' and cast('2015-09-21' as date) + interval '60' second)";
 
-			String sql = "select id, time_d from users where id between id * 5 and id * id";
+			//String sql = "select id, time_d from users where id between id * 5 and id * id";
 			//String sql = "select id, time_d from users";
 			//String orSql = "select time_d from users where id > 100 or id > 400 and id in (select id from users where id < 500)";
+			String sql = "insert into final_result select id, cast(1 as varchar) as ds, ds as source_ds from my_source";
 			RelNode relNode = sqlToRelNode((SchemaPlus) rootSchema, config, sql);
 
 
@@ -126,6 +157,7 @@ public class TestFive {
 				relNode = cluster.getPlanner().changeTraits(relNode, desiredTraits);
 			}
 
+			//todo add some rule to Volcano
 			planner.setRoot(relNode);
 			RelNode finalNode = planner.findBestExp();
 

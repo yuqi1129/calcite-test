@@ -5,6 +5,7 @@ package com.netease.yuqi.calcatetest;
  */
 
 import com.netease.yuqi.aux.rel.DogRel;
+import org.apache.calcite.config.Lex;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelOptUtil;
 import org.apache.calcite.plan.RelTraitSet;
@@ -25,6 +26,8 @@ import org.apache.calcite.sql.parser.SqlParser;
 import org.apache.calcite.sql.type.BasicSqlType;
 import org.apache.calcite.sql.type.SqlTypeFactoryImpl;
 import org.apache.calcite.sql.type.SqlTypeName;
+import org.apache.calcite.sql.validate.SqlConformance;
+import org.apache.calcite.sql.validate.SqlConformanceEnum;
 import org.apache.calcite.tools.FrameworkConfig;
 import org.apache.calcite.tools.Frameworks;
 import org.apache.calcite.tools.Planner;
@@ -72,8 +75,28 @@ public class TestFour {
 					return builder.build();
 				}
 			});
+
+
+			rootSchema.add("DATE_TYPES", new AbstractTable() {
+				public RelDataType getRowType(final RelDataTypeFactory typeFactory) {
+					RelDataTypeFactory.FieldInfoBuilder builder = typeFactory.builder();
+					builder.add("TEST_DATE", new BasicSqlType(new RelDataTypeSystemImpl() {
+					}, SqlTypeName.DATE));
+					builder.add("TEST_TIMESTAMP", new BasicSqlType(new RelDataTypeSystemImpl() {
+					}, SqlTypeName.TIMESTAMP));
+					builder.add("TEST_TIME", new BasicSqlType(new RelDataTypeSystemImpl() {
+					}, SqlTypeName.TIME));
+
+
+					builder.add("TEST_STRING", new BasicSqlType(new RelDataTypeSystemImpl() {
+					}, SqlTypeName.VARCHAR));
+					return builder.build();
+				}
+			});
+
+			//SqlParser.Config parserConfig = SqlParser.configBuilder().setLex(Lex.MYSQL).build();
 			final FrameworkConfig config = Frameworks.newConfigBuilder()
-					.parserConfig(SqlParser.Config.DEFAULT)
+					//.parserConfig(parserConfig)
 					.defaultSchema(rootSchema)
 					.build();
 			Planner planner = Frameworks.getPlanner(config);
@@ -99,16 +122,29 @@ public class TestFour {
 			//SqlNode parse1 = planner.parse("insert into table_result select * from (select a.id as id, a.name as name, b.score from users a left join score b on a.id = b.id where b.score is not null)");
 			//SqlNode parse1 = planner.parse("insert into table_result select id+1, name, score from (select a.id + 1 as id, a.name as name, b.score from users a left join score b on a.id = b.id where a.time_d between '2008-09-12' and cast('2015-09-21' as date) + interval '60' second)");
 
-			SqlNode parse1 = planner.parse("select a.id, b.id from (select null as id from users) a left join (select null as id from score) b on a.id = b.id");
+			//SqlNode parse1 = planner.parse("select a.id, b.id from (select null as id from users) a left join (select null as id from score) b on a.id = b.id");
 			//SqlNode parse1 = planner.parse("insert into table_result select id, name , max(id) from users");
 
+			//test CTE
+			//SqlNode parse2 = planner.parse("with T as (select * from users) select * from T");
 
-			SqlNode parse2 = planner.parse("with T as select * from users; select * from T");
-			SqlNode validate = planner.validate(parse2);
+			//test view
+//			SqlNode parse3 = planner.parse("create view v as select * from uses");
+//			planner.parse("select * from v");
 
+			//test another
+			//SqlNode parse4 = planner.parse("insert into `USERS` select id, cast(score as varchar),  date '2018-11-12' from score");
+
+			//test timestamp/string
+			//SqlNode parse5 = planner.parse("insert into date_types values('2010-11-01', '2010-11-01 00:00:00', '12:00:00', '123')");
+
+			//test limit
+			SqlNode parse5 = planner.parse("select * from users where id in ( select id from users where name = '2') limit 100 ");
+			SqlNode validate = planner.validate(parse5);
 			RelRoot root = planner.rel(validate);
 
 			System.out.println("Before------------------>");
+			System.out.println(Integer.parseInt("-1"));
 			System.out.print(RelOptUtil.toString(root.rel));
 
 
