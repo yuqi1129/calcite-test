@@ -7,17 +7,24 @@ package com.netease.yuqi.calcatetest;
 import com.netease.yuqi.aux.rel.DogRel;
 import org.apache.calcite.config.Lex;
 import org.apache.calcite.plan.RelOptCluster;
+import org.apache.calcite.plan.RelOptPredicateList;
 import org.apache.calcite.plan.RelOptUtil;
 import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.plan.volcano.VolcanoPlanner;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.RelRoot;
+import org.apache.calcite.rel.logical.LogicalFilter;
+import org.apache.calcite.rel.logical.LogicalProject;
 import org.apache.calcite.rel.metadata.DefaultRelMetadataProvider;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeFactory;
 import org.apache.calcite.rel.type.RelDataTypeSystem;
 import org.apache.calcite.rel.type.RelDataTypeSystemImpl;
 import org.apache.calcite.rex.RexBuilder;
+import org.apache.calcite.rex.RexExecutorImpl;
+import org.apache.calcite.rex.RexNode;
+import org.apache.calcite.rex.RexSimplify;
+import org.apache.calcite.rex.RexUtil;
 import org.apache.calcite.schema.SchemaPlus;
 import org.apache.calcite.schema.impl.AbstractTable;
 import org.apache.calcite.sql.SqlExplainLevel;
@@ -31,6 +38,8 @@ import org.apache.calcite.sql.validate.SqlConformanceEnum;
 import org.apache.calcite.tools.FrameworkConfig;
 import org.apache.calcite.tools.Frameworks;
 import org.apache.calcite.tools.Planner;
+
+import static org.apache.calcite.rex.RexUtil.EXECUTOR;
 
 
 public class TestFour {
@@ -94,6 +103,16 @@ public class TestFour {
 				}
 			});
 
+
+			rootSchema.add("PEOPLE", new AbstractTable() {
+				public RelDataType getRowType(final RelDataTypeFactory typeFactory) {
+					RelDataTypeFactory.FieldInfoBuilder builder = typeFactory.builder();
+					builder.add("ID", new BasicSqlType(new RelDataTypeSystemImpl() {
+					}, SqlTypeName.INTEGER));
+					return builder.build();
+				}
+			});
+
 			//SqlParser.Config parserConfig = SqlParser.configBuilder().setLex(Lex.MYSQL).build();
 			final FrameworkConfig config = Frameworks.newConfigBuilder()
 					//.parserConfig(parserConfig)
@@ -138,11 +157,26 @@ public class TestFour {
 			//test timestamp/string
 			//SqlNode parse5 = planner.parse("insert into date_types values('2010-11-01', '2010-11-01 00:00:00', '12:00:00', '123')");
 
+			//test insert column
+
+			//SqlNode parse5 = planner.parse("insert into users select * from (values (1, 'a', date '2015-11-02', 1), (1, 'a', date '2015-11-02', 1)) as t(x,y,z,k)");
+
+			SqlNode parse5 = planner.parse("select id from people where id < 5 or id < 10");
 			//test limit
-			SqlNode parse5 = planner.parse("select * from users where id in ( select id from users where name = '2') limit 100 ");
+			//SqlNode parse5 = planner.parse("select * from users where id in ( select id from users where name = '2') limit 100 ");
 			SqlNode validate = planner.validate(parse5);
 			RelRoot root = planner.rel(validate);
 
+
+			RexSimplify rexSimplify = new RexSimplify(
+					root.rel.getCluster().getRexBuilder(),
+					RelOptPredicateList.EMPTY,
+					EXECUTOR
+			);
+
+			RexNode node = rexSimplify.simplify(((LogicalFilter)((LogicalProject) root.rel).getInput()).getCondition());
+
+			//
 			System.out.println("Before------------------>");
 			System.out.println(Integer.parseInt("-1"));
 			System.out.print(RelOptUtil.toString(root.rel));

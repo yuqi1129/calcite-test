@@ -213,6 +213,9 @@ public class TestFive {
 			volcanoPlanner.addRule(DogProjectConverter.INSTANCE);
 			volcanoPlanner.addRule(DogTableScanConverter.INSTANCE);
 
+			//todo add more rule such as filter join/filter project, at this point, rule is
+			//light weight
+
 			//volcanoPlanner.addRelTraitDef(ConventionTraitDef.INSTANCE);
 			//volcanoPlanner.addRelTraitDef(RelCollationTraitDef.INSTANCE);
 			//volcanoPlanner.addRelTraitDef(RelDistributionTraitDef.INSTANCE);
