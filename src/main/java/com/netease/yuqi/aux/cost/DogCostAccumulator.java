@@ -25,7 +25,10 @@ public class DogCostAccumulator {
 
 
 	public RelOptCost getAccumulative(TableScan node, RelMetadataQuery mq) {
-		return node.getCluster().getPlanner().getCostFactory().makeCost(node.estimateRowCount(mq), 0, 0);
+		//make the most a constant value
+		//todo use row count as the cost
+		return node.getCluster().getPlanner().getCostFactory().makeCost(1.0, 1.0, 1.0);
+		//return node.getCluster().getPlanner().getCostFactory().makeCost(node.estimateRowCount(mq), 0, 0);
 	}
 
 
@@ -47,13 +50,21 @@ public class DogCostAccumulator {
 		 * where id is not null, childRows  *= 0.5
 		 * ....
 		 */
-		return null;
+		return input.computeSelfCost(project.getCluster().getPlanner(), mq);
 	}
 
 	public RelOptCost getAccumulative(Filter filter, RelMetadataQuery mq) {
-		//make some estimeate
+		//make some estimate
 
-		return null;
+		RelNode node = filter.getInput();
+		if (node instanceof RelSubset) {
+			//todo
+		} else {
+			//todo
+		}
+
+		//just for test
+		return filter.getInput().computeSelfCost(filter.getCluster().getPlanner(), mq);
 	}
 
 	//todo for more implement;

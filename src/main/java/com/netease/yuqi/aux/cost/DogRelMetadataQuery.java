@@ -12,11 +12,13 @@ public class DogRelMetadataQuery extends RelMetadataQuery {
 	}
 
 	public DogRelMetadataQuery() {
-		this(null, null);
-		THREAD_PROVIDERS.set(JaninoRelMetadataProvider.of(DogRelMetaDataProvider.INSTANCE));
+		super(THREAD_PROVIDERS.get(), EMPTY);
 	}
 
-	public static final DogRelMetadataQuery INSTNACE = new DogRelMetadataQuery();
+	public static DogRelMetadataQuery instance() {
+		THREAD_PROVIDERS.set(JaninoRelMetadataProvider.of(DogRelMetaDataProvider.INSTANCE));
+		return new DogRelMetadataQuery();
+	}
 
-
+	public static final DogRelMetadataQuery INSTANCE = instance();
 }

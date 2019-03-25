@@ -13,6 +13,8 @@ import org.apache.calcite.rel.core.TableScan;
 import org.apache.calcite.rel.metadata.RelMetadataQuery;
 
 public class DogTableScan extends TableScan implements DogRel {
+	private RelOptCost cost;
+
 	public DogTableScan(RelOptCluster cluster, RelTraitSet traitSet, RelOptTable table) {
 		super(cluster, traitSet, table);
 	}
@@ -20,6 +22,14 @@ public class DogTableScan extends TableScan implements DogRel {
 	@Override
 	public RelOptCost computeSelfCost(RelOptPlanner planner, RelMetadataQuery mq) {
 		//return super.computeSelfCo(planner, mq);
-		return DogRelMetadataQuery.INSTNACE.getCumulativeCost(this);
+
+		if (cost != null) {
+			return cost;
+		}
+
+		cost = DogRelMetadataQuery.INSTANCE.getCumulativeCost(this);
+		return cost;
+		//return DogRelMetadataQuery.INSTNACE.getCumulativeCost(this);
+		//return DogRelMetadataQuery.INSTNACE.getNonCumulativeCost(this);
 	}
 }

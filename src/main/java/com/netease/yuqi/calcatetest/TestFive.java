@@ -3,9 +3,11 @@ package com.netease.yuqi.calcatetest;/*
  * Date: 2018/9/16 下午5:32
  */
 
+import com.netease.yuqi.aux.DogVolcanoPlanner;
 import com.netease.yuqi.aux.converter.DogFilterConverter;
 import com.netease.yuqi.aux.converter.DogProjectConverter;
 import com.netease.yuqi.aux.converter.DogTableScanConverter;
+import com.netease.yuqi.aux.cost.DogRelMetaDataProvider;
 import com.netease.yuqi.aux.rel.DogRel;
 import com.netease.yuqi.aux.DogSqlValidator;
 import org.apache.calcite.config.CalciteConnectionConfig;
@@ -21,12 +23,10 @@ import org.apache.calcite.plan.RelTraitDef;
 import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.plan.hep.HepPlanner;
 import org.apache.calcite.plan.hep.HepProgramBuilder;
-import org.apache.calcite.plan.volcano.VolcanoPlanner;
 import org.apache.calcite.prepare.CalciteCatalogReader;
 import org.apache.calcite.rel.RelDistributionTraitDef;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.RelRoot;
-import org.apache.calcite.rel.metadata.DefaultRelMetadataProvider;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeFactory;
 import org.apache.calcite.rel.type.RelDataTypeSystem;
@@ -132,10 +132,10 @@ public class TestFive {
 					.build();
 			//String sql = "insert into table_result select id+1, name, score from (select a.id + 1 as id, a.name as name, b.score from users a left join score b on a.id = b.id where a.time_d between '2008-09-12' and cast('2015-09-21' as date) + interval '60' second)";
 
-			//String sql = "select id, time_d from users where id between id * 5 and id * id";
+			String sql = "select id, time_d from users where id between id * 5 and id * id";
 			//String sql = "select id, time_d from users";
 			//String orSql = "select time_d from users where id > 100 or id > 400 and id in (select id from users where id < 500)";
-			String sql = "insert into final_result select id, cast(1 as varchar) as ds, ds as source_ds from my_source";
+			//String sql = "insert into final_result select id, cast(1 as varchar) as ds, ds as source_ds from my_source";
 			RelNode relNode = sqlToRelNode((SchemaPlus) rootSchema, config, sql);
 
 
@@ -162,7 +162,8 @@ public class TestFive {
 			RelNode finalNode = planner.findBestExp();
 
 			System.out.println(RelOptUtil.toString(finalNode, SqlExplainLevel.ALL_ATTRIBUTES));
-
+			RelNode tmp = finalNode;
+			System.out.println(tmp);
 
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -199,7 +200,7 @@ public class TestFive {
 			SqlNode validateSqlNode = validator.validate(sqlNode);
 
 			final RexBuilder rexBuilder = createRexBuilder(factory);
-			VolcanoPlanner volcanoPlanner = new VolcanoPlanner();
+			DogVolcanoPlanner volcanoPlanner = new DogVolcanoPlanner();
 
 			volcanoPlanner.clearRelTraitDefs();
 			for (RelTraitDef def : frameworkConfig.getTraitDefs()) {
@@ -208,7 +209,7 @@ public class TestFive {
 
 			final RelOptCluster cluster = RelOptCluster.create(volcanoPlanner, rexBuilder);
 			//begin
-			cluster.setMetadataProvider(DefaultRelMetadataProvider.INSTANCE);
+			cluster.setMetadataProvider(DogRelMetaDataProvider.INSTANCE);
 			volcanoPlanner.addRule(DogFilterConverter.INSTANCE);
 			volcanoPlanner.addRule(DogProjectConverter.INSTANCE);
 			volcanoPlanner.addRule(DogTableScanConverter.INSTANCE);

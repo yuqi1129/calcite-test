@@ -5,7 +5,6 @@ package com.netease.yuqi.aux.cost;/*
 
 import com.google.common.collect.ImmutableList;
 import org.apache.calcite.rel.metadata.ChainedRelMetadataProvider;
-import org.apache.calcite.rel.metadata.DefaultRelMetadataProvider;
 import org.apache.calcite.rel.metadata.RelMdAllPredicates;
 import org.apache.calcite.rel.metadata.RelMdCollation;
 import org.apache.calcite.rel.metadata.RelMdColumnOrigins;
@@ -35,6 +34,7 @@ public class DogRelMetaDataProvider extends ChainedRelMetadataProvider {
 	public DogRelMetaDataProvider() {
 		super(
 				ImmutableList.of(
+						DogCumulativeCost.SOURCE,
 						RelMdPercentageOriginalRows.SOURCE,
 						RelMdColumnOrigins.SOURCE,
 						RelMdExpressionLineage.SOURCE,
@@ -55,8 +55,7 @@ public class DogRelMetaDataProvider extends ChainedRelMetadataProvider {
 						RelMdExplainVisibility.SOURCE,
 						RelMdPredicates.SOURCE,
 						RelMdAllPredicates.SOURCE,
-						RelMdCollation.SOURCE,
-						DogCumulativeCost.SOURCE
+						RelMdCollation.SOURCE
 				)
 		);
 	}
