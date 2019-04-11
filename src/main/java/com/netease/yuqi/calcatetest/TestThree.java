@@ -107,6 +107,50 @@ public class TestThree {
 					return builder.build();
 				}
 			});
+
+
+			rootSchema.add("USER_BEHAVIOR", new AbstractTable() {
+				@Override
+				public RelDataType getRowType(RelDataTypeFactory typeFactory) {
+					RelDataTypeFactory.FieldInfoBuilder builder = typeFactory.builder();
+
+					RelDataType id = typeFactory.createTypeWithNullability(typeFactory.createSqlType(SqlTypeName.VARCHAR), true);
+					RelDataType idType = typeFactory.createTypeWithNullability(typeFactory.createSqlType(SqlTypeName.VARCHAR), true);
+					RelDataType timestamp = typeFactory.createTypeWithNullability(typeFactory.createSqlType(SqlTypeName.BIGINT), true);
+
+
+					RelDataType source = typeFactory.createTypeWithNullability(typeFactory.createSqlType(SqlTypeName.INTEGER), true);
+					RelDataType action = typeFactory.createTypeWithNullability(typeFactory.createSqlType(SqlTypeName.INTEGER), true);
+					RelDataType text = typeFactory.createTypeWithNullability(typeFactory.createSqlType(SqlTypeName.VARCHAR), true);
+
+					RelDataType keyWord = typeFactory.createTypeWithNullability(typeFactory.createSqlType(SqlTypeName.VARCHAR), true);
+					RelDataType tag = typeFactory.createTypeWithNullability(typeFactory.createSqlType(SqlTypeName.VARCHAR), true);
+					RelDataType category = typeFactory.createTypeWithNullability(typeFactory.createSqlType(SqlTypeName.VARCHAR), true);
+
+					RelDataType extra_attribute = typeFactory.createTypeWithNullability(typeFactory.createSqlType(SqlTypeName.VARCHAR), true);
+					RelDataType date = typeFactory.createTypeWithNullability(typeFactory.createSqlType(SqlTypeName.INTEGER), true);
+
+					builder.add("ID", id);
+					builder.add("ID_TYPE", idType);
+					builder.add("TIMESTAMP", timestamp);
+
+
+					builder.add("SOURCE", source);
+					builder.add("ACTION", action);
+					builder.add("TEXT", text);
+
+					builder.add("KEYWORD", keyWord);
+					builder.add("TAG", tag);
+					builder.add("CATEGORY", category);
+
+					builder.add("EXTRA_ATTRIBUTE", extra_attribute);
+					builder.add("DATE", date);
+
+
+					return builder.build();
+				}
+			});
+
 			final FrameworkConfig config = Frameworks.newConfigBuilder()
 					.parserConfig(SqlParser.Config.DEFAULT)
 					.defaultSchema(rootSchema)
@@ -143,7 +187,14 @@ public class TestThree {
 
 			String sql4 = "select id, case when sum(score) is not null then 1 else 0 end tmp from table_result group by id";
 			//SqlNode parse1 = planner.parse("insert into table_result select id+1, name, score from (select a.id + 1 as id, a.name as name, b.score from users a left join score b on a.id = b.id where a.time_d between '2008-09-12' and cast('2015-09-21' as date) + interval '60' second)");
-			SqlNode parse1 = planner.parse(sql2);
+
+
+			//select id,text,top-100 from table A where source=app AND action=usage AND (text contains "com.autonavi.minimap" OR text contains "com.baidu.BaiduMap")
+
+
+			String sql5 = "select id, text from user_behavior where source = 1 and action =2 and ( text like 'com.autonavi.minimap' or text like 'com.baidu.BaiduMap')";
+
+			SqlNode parse1 = planner.parse(sql5);
 
 			//SqlNode parse1 = planner.parse("insert into table_result select id, name , max(id) from users");
 			SqlNode validate = planner.validate(parse1);
@@ -212,4 +263,5 @@ public class TestThree {
 			e.printStackTrace();
 		}
 	}
+
 }
