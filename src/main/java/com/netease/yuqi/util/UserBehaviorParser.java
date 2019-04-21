@@ -52,6 +52,8 @@ public class UserBehaviorParser {
                 RelDataType extra_attribute = typeFactory.createTypeWithNullability(typeFactory.createSqlType(SqlTypeName.VARCHAR), true);
                 RelDataType date = typeFactory.createTypeWithNullability(typeFactory.createSqlType(SqlTypeName.INTEGER), true);
 
+                RelDataType extra_attribute_key = typeFactory.createTypeWithNullability(typeFactory.createSqlType(SqlTypeName.ARRAY), true);
+
                 builder.add("ID", id);
                 builder.add("ID_TYPE", idType);
                 builder.add("TIMESTAMP", timestamp);
@@ -67,6 +69,7 @@ public class UserBehaviorParser {
 
                 builder.add("EXTRA_ATTRIBUTE", extra_attribute);
                 builder.add("DATE", date);
+                builder.add("EXTRA_ATTRIBUTE_KEY", extra_attribute_key);
 
 
                 return builder.build();

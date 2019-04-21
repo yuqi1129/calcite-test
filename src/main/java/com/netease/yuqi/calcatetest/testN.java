@@ -14,16 +14,29 @@ import org.apache.calcite.rel.RelRoot;
 import org.apache.calcite.rel.type.RelDataTypeSystem;
 import org.apache.calcite.schema.SchemaPlus;
 import org.apache.calcite.schema.impl.ScalarFunctionImpl;
+import org.apache.calcite.sql.SqlFunction;
+import org.apache.calcite.sql.SqlFunctionCategory;
+import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.fun.SqlStdOperatorTable;
 import org.apache.calcite.sql.parser.SqlParser;
+import org.apache.calcite.sql.type.OperandTypes;
+import org.apache.calcite.sql.type.ReturnTypes;
 import org.apache.calcite.sql.type.SqlTypeFactoryImpl;
+import org.apache.calcite.sql.type.SqlTypeFamily;
+import org.apache.calcite.sql.type.SqlTypeName;
 import org.apache.calcite.sql.util.ChainedSqlOperatorTable;
+import org.apache.calcite.sql.util.ListSqlOperatorTable;
 import org.apache.calcite.tools.FrameworkConfig;
 import org.apache.calcite.tools.Frameworks;
 import org.apache.calcite.tools.Planner;
 
 import java.util.Properties;
+
+import static java.lang.System.exit;
+import static org.apache.calcite.sql.SqlFunctionCategory.USER_DEFINED_FUNCTION;
+import static org.apache.calcite.sql.type.InferTypes.VARCHAR_1024;
+import static org.apache.calcite.sql.type.SqlTypeTransforms.FORCE_NULLABLE;
 
 public class testN {
 	public static class TestSchema {
@@ -54,10 +67,10 @@ public class testN {
 		//explain(sql);
 
 
-		sql = "select feature_table.trace_id, train(feature_table.feature,feature_table.label) " + "\n" +
+		sql = "select my_function(feature_table.trace_id), train(feature_table.feature,label_table.label) " + "\n" +
 				"from feature_table_data.data feature_table join label_table_data.data label_table " + "\n" +
 				"on feature_table.trace_id = label_table.trace_id " + "\n" +
-				"and qps_limit(feature_table.trace_id)";
+				"and qps_limit(feature_table.trace_id) <> '0'";
 		explain(sql);
         /* fail
         sql = "set a=1";
@@ -72,8 +85,15 @@ public class testN {
 			System.out.println(a);
 			return a;
 		}
-
 	}
+
+	public static class Train {
+		public static String train(String s1, String s2) {
+			return s1 + s2;
+		}
+	}
+
+
 	public static void explain(String sql) {
 		System.out.println("sql: \n" + sql);
 
@@ -91,14 +111,33 @@ public class testN {
 
 		// add udf
 		schemaPlus.add("QPS_LIMIT", ScalarFunctionImpl.create(QpsLimit.class, "qps_limit"));
+		schemaPlus.add("TRAIN", ScalarFunctionImpl.create(Train.class, "train"));
+
+
+		//通过schemaPlus 增加的函数、udf、表一定要通过CalciteCataLogReader读取，否则系统获取udf等
+		//reflective schema-->table ReflectiveTable
+		//即将udf等放入Schema中，然后将scheam以参数传入CalciteCatalogReader
+		//如果不想通过这种方式可以直接将Function 加入ListOpeartorTable, 可以采用如下的方式
+
 		CalciteCatalogReader calciteCatalogReader = new CalciteCatalogReader(rootSchema, Lists.newArrayList(),
 				new SqlTypeFactoryImpl(RelDataTypeSystem.DEFAULT), new CalciteConnectionConfigImpl(new Properties()));
 
+		ListSqlOperatorTable listSqlOperatorTable = new ListSqlOperatorTable();
+		listSqlOperatorTable.add(new SqlFunction(
+				"my_function".toUpperCase(),
+				SqlKind.OTHER_FUNCTION,
+				ReturnTypes.cascade(ReturnTypes.explicit(SqlTypeName.VARCHAR), FORCE_NULLABLE),//return type is varchar with length of 1024
+				VARCHAR_1024, //parameter varchar with length of 1024
+				OperandTypes.family(SqlTypeFamily.CHARACTER),
+				SqlFunctionCategory.STRING
+				)
+		);
 
 		FrameworkConfig frameworkConfig =
 				Frameworks.newConfigBuilder()
 						.defaultSchema(schemaPlus)
-						.operatorTable(ChainedSqlOperatorTable.of(SqlStdOperatorTable.instance(), calciteCatalogReader))
+						.operatorTable(ChainedSqlOperatorTable.of(SqlStdOperatorTable.instance(),
+								calciteCatalogReader, listSqlOperatorTable))
 						.build();
 
 		SqlParser.ConfigBuilder parserConfig =
@@ -120,6 +159,7 @@ public class testN {
 			relRoot = planner.rel(sqlNode);
 		} catch (Exception e) {
 			e.printStackTrace();
+			exit(-1);
 		}
 
 		RelNode relNode = relRoot.project();

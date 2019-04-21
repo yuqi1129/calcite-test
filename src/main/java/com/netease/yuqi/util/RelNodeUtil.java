@@ -13,7 +13,7 @@ import java.util.Map;
  **/
 public class RelNodeUtil {
     public static void main(String[] args) {
-        String sql = "select id, text from user_behavior where source = 1 and action =2 and ( text like 'com.autonavi.minimap' or text like 'com.baidu.BaiduMap')";
+        String sql = "select id, text, extra_attribute_key[1] from user_behavior where source = 1 and action =2 and ( text like 'com.autonavi.minimap' or text like 'com.baidu.BaiduMap')";
 
         RelNode relNode = UserBehaviorParser.INSTANCE.getRelNode(sql);
         System.out.println(RelOptUtil.toString(relNode));

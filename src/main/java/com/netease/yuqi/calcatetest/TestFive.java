@@ -142,6 +142,7 @@ public class TestFive {
 			HepProgramBuilder builder = new HepProgramBuilder();
 			builder.addRuleInstance(DogTableScanConverter.INSTANCE);
 			HepPlanner hepPlanner = new HepPlanner(builder.build());
+			//hepPlanner.addRule(DogTableScanConverter.INSTANCE);
 			hepPlanner.setRoot(relNode);
 			relNode = hepPlanner.findBestExp();
 
