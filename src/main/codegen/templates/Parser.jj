@@ -127,6 +127,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 
+import com.netease.yuqi.fun.FunctionUtil;
+
 import static org.apache.calcite.util.Static.RESOURCE;
 
 /**
@@ -3046,11 +3048,14 @@ void Expression2b(ExprContext exprContext, List<Object> list) :
             list.add(new SqlParserUtil.ToTreeListItem(op, getPos()));
         }
     )*
+    // 0个或多个前缀操作符
     e = Expression3(exprContext) {
         list.add(e);
     }
+    // 正常表达式
     (
         <DOT>
+        //简单标识符，如'name', 对应的复杂标识，CompoundIdentifier() 如'name.first'
         p = SimpleIdentifier() {
             list.add(
                 new SqlParserUtil.ToTreeListItem(
@@ -3058,6 +3063,7 @@ void Expression2b(ExprContext exprContext, List<Object> list) :
             list.add(p);
         }
     )*
+    // 0个或多少'.'操作符
 }
 
 /**
@@ -3274,14 +3280,32 @@ SqlNode Expression3(ExprContext exprContext) :
 }
 {
     LOOKAHEAD(2)
+    /*
+      LOOKAHEAD 主要作用
+
+      假设有两个句式
+      格式1
+      LOOKAHEAD(2)
+      <AS> <LIKE> ...
+
+      格式2
+      <AS> (<LIKE>)+ ...
+
+      当传入'as like a'时，如果使格式1，当读到第二个字符 like后，发现满足规则，直接进行下一
+      阶段处理, 不用去读第三个字符a; 如果使用格式2, 一定要读取所有才能判断是符合规则
+      也就是LOOKAHEAD是一种快速判断匹配法
+    */
     e = AtomicRowExpression()
+    //常规列表达式, 请在本文件中找到该函数
     {
         checkNonQueryExpression(exprContext);
         return e;
     }
 |
+    //或是游标表达式，不常见
     e = CursorExpression(exprContext) { return e; }
 |
+    //或是row(1, 2, 3) 这种形式
     LOOKAHEAD(3)
     <ROW> {
         s = span();
@@ -3300,6 +3324,7 @@ SqlNode Expression3(ExprContext exprContext) :
     [
         <ROW> { rowSpan = span(); }
     ]
+    //
     list1 = ParenthesizedQueryOrCommaList(exprContext) {
         if (rowSpan != null) {
             // interpret as row constructor
@@ -3421,6 +3446,8 @@ SqlNode AtomicRowExpression() :
     (
         LOOKAHEAD(1)
         e = Literal()
+    |
+        e = extraFunction()
     |
         e = DynamicParam()
     |
@@ -4660,6 +4687,50 @@ SqlNode CursorExpression(ExprContext exprContext) :
     }
     e = Expression(ExprContext.ACCEPT_QUERY) {
         return SqlStdOperatorTable.CURSOR.createCall(s.end(e), e);
+    }
+}
+
+/*
+*   Create User-defined function
+*/
+
+SqlNode extraFunction() :
+{
+    SqlNode node;
+    SqlNode e;
+    List<SqlNode> args = null;
+    final Span s;
+}
+{   (
+        (
+            <FUNC1> { s = span(); }
+            <LPAREN>
+            e = Expression(ExprContext.ACCEPT_NON_QUERY)
+            {
+                startList(e);
+            }
+            <LPAREN>
+            {
+                node = FunctionUtil.FUNC1.createCall(s.end(this), args);
+            }
+        )
+        |
+        (
+            <FUNC2> { s = span(); }
+            <LPAREN>
+            e = Expression(ExprContext.ACCEPT_NON_QUERY)
+            {
+                startList(e);
+            }
+            <LPAREN>
+            {
+                node = FunctionUtil.FUNC2.createCall(s.end(this), args);
+            }
+
+        )
+    )
+    {
+        return node;
     }
 }
 
@@ -6370,6 +6441,8 @@ SqlPostfixOperator PostfixRowOperator() :
 |   < FROM: "FROM" >
 |   < FULL: "FULL" >
 |   < FUNCTION: "FUNCTION" >
+|   < FUNC1: "FUNC1" >
+|   < FUNC2: "FUNC2" >
 |   < FUSION: "FUSION" >
 |   < G: "G" >
 |   < GENERAL: "GENERAL" >
